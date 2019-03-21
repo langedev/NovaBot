@@ -18,17 +18,38 @@ var newPlayerTemplate = {
     "dm_points": 0
 };
 var processes = {
-    "!read": {
-        title: "read",
-        description: "Read a description of your character",
-        run: function (msg, data) { return read(msg, data); }
+    "help": {
+        title: "Help",
+        description: "Show a description of a command",
+        run: function (msg, data, args, file) { return help(msg, args); }
     },
-    "!create": {
-        title: "create",
-        description: "Create a character, can only be used once.",
-        run: function (msg, args) { return create(msg, args); }
+    "read": {
+        title: "Read",
+        description: "Read a description of your squirrel",
+        run: function (msg, data, args, file) { return read(msg, data); }
+    },
+    "create": {
+        title: "Create",
+        description: "Create a squirrel, can only be used once.",
+        run: function (msg, data, args, file) { return msg.reply("You already have a squirrel silly."); }
+    },
+    "namechange": {
+        title: "Namechange",
+        description: "Change the name of your squirrel, can only be used once",
+        run: function (msg, data, args, file) { return nameChange(msg, data, file); }
+    },
+    "races": {
+        title: "Races",
+        description: "List all the races",
+        run: function (msg, data, args, file) { return printRaces(msg); }
+    },
+    "classes": {
+        title: "Classes",
+        description: "List all the classes",
+        run: function (msg, data, args, file) { return printClasses(msg); }
     }
 };
+var COLOR = "#E81B47";
 var authorId;
 var playerFile;
 var rawPlayerData;
@@ -62,26 +83,11 @@ client.on('message', function (msg) {
     if (fs.existsSync(playerFile)) {
         rawPlayerData = fs.readFileSync(playerFile);
         playerData = JSON.parse(rawPlayerData);
-        processes.forEach(function (process) {
-            if (command === "!" + process.title) {
-                process.run();
+        Object.keys(processes).forEach(function (process) {
+            if ("!" + processes[process].title.toLowerCase() === command) {
+                processes[process].run(msg, playerData, args, playerFile);
             }
         });
-        if (command === "!read") {
-            read(msg, playerData);
-        }
-        else if (command === "!create") {
-            msg.reply("You already have a squirrel silly.");
-        }
-        else if (command === "!namechange") {
-            nameChange(msg, playerData, playerFile);
-        }
-        else if (command === "!races") {
-            printRaces(msg);
-        }
-        else if (command === "!classes") {
-            printClasses(msg);
-        }
     }
     else if (command === "!create") {
         console.log("Attempting to make a squirrel for " + authorId);
@@ -120,11 +126,13 @@ function capitalize(toCaps) {
     return toCaps.charAt(0).toUpperCase() + toCaps.slice(1).toLowerCase();
 }
 // Commands:
+function help(msg, args) {
+}
 function read(msg, data) {
     var embed = new Discord.RichEmbed()
         .setTitle(msg.author.username)
         .setDescription("Squirrel Info")
-        .setColor("#E81B47")
+        .setColor(COLOR)
         .setThumbnail(msg.author.avatarURL)
         .addField("Name", data.name)
         .addField("Race", raceText(data.race))

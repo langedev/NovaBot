@@ -19,6 +19,11 @@ const newPlayerTemplate: player = {
     "dm_points": 0
 }
 const processes: any = {
+    "help": {
+        title: "Help",
+        description: "Show a description of a command",
+        run: (msg: any, data: player, args: string[], file: any) => help(msg, args)
+    },
     "read": {
         title: "Read",
         description: "Read a description of your squirrel",
@@ -27,7 +32,7 @@ const processes: any = {
     "create": {
         title: "Create",
         description: "Create a squirrel, can only be used once.",
-        run: (msg: any, data: player, args: string[], file: any) => create(msg, args)
+        run: (msg: any, data: player, args: string[], file: any) => msg.reply(`You already have a squirrel silly.`)
     },
     "namechange": {
         title: "Namechange",
@@ -45,6 +50,7 @@ const processes: any = {
         run: (msg: any, data: player, args: string[], file: any) => printClasses(msg)
     }
 }
+const COLOR: string = "#E81B47";
 
 let authorId: number;
 let playerFile: string;
@@ -84,9 +90,9 @@ client.on('message', msg => {
         rawPlayerData = fs.readFileSync(playerFile);
         playerData = JSON.parse(rawPlayerData);
 
-        processes.forEach(process => {
-            if(command === `!${process.title}`){
-                process.run(msg, playerData, args, playerFile);
+        Object.keys(processes).forEach(process => {
+            if(`!${processes[process].title.toLowerCase()}` === command){
+                processes[process].run(msg, playerData, args, playerFile);
             }
         });
 
@@ -135,11 +141,15 @@ function capitalize(toCaps: string): string {
 
 // Commands:
 
+function help(msg: any, args: string[]) {
+    
+}
+
 function read(msg: any, data: player): void {
     let embed = new Discord.RichEmbed()
         .setTitle(msg.author.username)
         .setDescription("Squirrel Info")
-        .setColor("#E81B47")
+        .setColor(COLOR)
         .setThumbnail(msg.author.avatarURL)
         .addField("Name", data.name)
         .addField("Race", raceText(data.race))
