@@ -19,15 +19,30 @@ const newPlayerTemplate: player = {
     "dm_points": 0
 }
 const processes: any = {
-    "!read": {
-        title: "read",
-        description: "Read a description of your character",
-        run: (msg, data) => read(msg, data)
+    "read": {
+        title: "Read",
+        description: "Read a description of your squirrel",
+        run: (msg: any, data: player, args: string[], file: any) => read(msg, data)
     },
-    "!create": {
-        title: "create",
-        description: "Create a character, can only be used once.",
-        run: (msg, args) => create(msg, args)
+    "create": {
+        title: "Create",
+        description: "Create a squirrel, can only be used once.",
+        run: (msg: any, data: player, args: string[], file: any) => create(msg, args)
+    },
+    "namechange": {
+        title: "Namechange",
+        description: "Change the name of your squirrel, can only be used once",
+        run: (msg: any, data: player, args: string[], file: any) => nameChange(msg, data, file)
+    },
+    "races": {
+        title: "Races",
+        description: "List all the races",
+        run: (msg: any, data: player, args: string[], file: any) => printRaces(msg)
+    },
+    "classes": {
+        title: "Classes",
+        description: "List all the classes",
+        run: (msg: any, data: player, args: string[], file: any) => printClasses(msg)
     }
 }
 
@@ -71,20 +86,9 @@ client.on('message', msg => {
 
         processes.forEach(process => {
             if(command === `!${process.title}`){
-                process.run()
+                process.run(msg, playerData, args, playerFile);
             }
         });
-        if (command === `!read`) {
-            read(msg, playerData);
-        } else if (command === `!create`) {
-            msg.reply(`You already have a squirrel silly.`);
-        } else if (command === `!namechange`) {
-            nameChange(msg, playerData, playerFile);
-        } else if (command === `!races`) {
-            printRaces(msg);
-        } else if (command === `!classes`) {
-            printClasses(msg);
-        }
 
     } else if (command === `!create`) {
         console.log(`Attempting to make a squirrel for ${authorId}`);
