@@ -5,6 +5,7 @@ const Discord = require('discord.js');
 const client = new Discord.Client();
 const info = JSON.parse(fs.readFileSync(`./data/info.json`));
 import { player } from "./data/enums/playerdata";
+import { listenerCount } from "cluster";
 
 const races: Array<string> = ["tree", "ground", "chipmunk"];
 const classes: Array<string> = ["rogue", "berserker", "knight", "ranger", "huntsman", "priest"];
@@ -25,6 +26,12 @@ const processes: any = {
         args: "command - the command you'd like to know more about\n",
         run: (msg: any, data: player, args: string[], file: any) => help(msg, args)
     },
+    "list": {
+        title: "List",
+        description: "List all commands",
+        args: "",
+        run: (msg: any, data: player, args: string[], file: any) => list(msg)
+    },
     "read": {
         title: "Read",
         description: "Read a description of your squirrel",
@@ -33,15 +40,15 @@ const processes: any = {
     },
     "create": {
         title: "Create",
-        description: "Create a squirrel, can only be used once.",
+        description: "Create a squirrel, can only be used once",
         args: "name - the name of the created squirrel\nrace - The race of the created squirrel, type !races for race options\nclass - The class of the created squirrel, type !classes for class options",
         run: (msg: any, data: player, args: string[], file: any) => msg.reply(`You already have a squirrel silly.`)
     },
     "namechange": {
         title: "Namechange",
-        description: "Change the name of your squirrel, can only be used once",
+        description: "Change the name of your squirrel, can only be used at level 1",
         args: "name - the new name for your squirrel",
-        run: (msg: any, data: player, args: string[], file: any) => nameChange(msg, data, file)
+        run: (msg: any, data: player, args: string[], file: any) => nameChange(msg, data, args, file)
     },
     "races": {
         title: "Races",
@@ -151,8 +158,8 @@ function help(msg: any, args: string[]): void {
     } else if(processes.hasOwnProperty(argument)){
         let embed = new Discord.RichEmbed()
             .setTitle(processes[argument].title)
-            .setDescription(processes[argument].description)
-            .setColor(COLOR);
+            .setColor(COLOR)
+            .setDescription(processes[argument].description);
         if(processes[argument].args === "") {
             embed.addField("Arguments:", `This command has no arguments`);
         } else {
@@ -164,12 +171,24 @@ function help(msg: any, args: string[]): void {
     }
 }
 
+function list(msg: any): void {
+    let embed = new Discord.RichEmbed()
+        .setTitle("List of Commands")
+        .setColor(COLOR);
+    let description: string = "";
+    Object.keys(processes).forEach(process => {
+        description += `**${processes[process].title}:** ${processes[process].description}.\n`;
+    });
+    embed.setDescription(description);
+    msg.author.send(embed);
+}
+
 function read(msg: any, data: player): void {
     let embed = new Discord.RichEmbed()
         .setTitle(msg.author.username)
-        .setDescription("Squirrel Info")
         .setColor(COLOR)
         .setThumbnail(msg.author.avatarURL)
+        .setDescription("Squirrel Info")
         .addField("Name", data.name)
         .addField("Race", raceText(data.race))
         .addField("Class", capitalize(data.class))
@@ -226,10 +245,10 @@ function create(msg: any, args: Array<string>, file: any): boolean {
     }
 }
 
-function nameChange(msg: any, data: player, file: any): void {
+function nameChange(msg: any, data: player, args: string[], file: any): void {
     if (data.level == 1) {
-        if (msg.content.split(' ').length >= 2) {
-            let newName: string = msg.content.split(' ')[1];
+        if (args.length >= 2) {
+            let newName: string = args[1];
             data.name = capitalize(newName) + " " + data.name.split(' ')[1];
             fs.writeFileSync(file, JSON.stringify(data));
             msg.reply(`Name changed to ${data.name}`);

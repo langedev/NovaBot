@@ -24,6 +24,12 @@ var processes = {
         args: "command - the command you'd like to know more about\n",
         run: function (msg, data, args, file) { return help(msg, args); }
     },
+    "list": {
+        title: "List",
+        description: "List all commands",
+        args: "",
+        run: function (msg, data, args, file) { return list(msg); }
+    },
     "read": {
         title: "Read",
         description: "Read a description of your squirrel",
@@ -32,15 +38,15 @@ var processes = {
     },
     "create": {
         title: "Create",
-        description: "Create a squirrel, can only be used once.",
+        description: "Create a squirrel, can only be used once",
         args: "name - the name of the created squirrel\nrace - The race of the created squirrel, type !races for race options\nclass - The class of the created squirrel, type !classes for class options",
         run: function (msg, data, args, file) { return msg.reply("You already have a squirrel silly."); }
     },
     "namechange": {
         title: "Namechange",
-        description: "Change the name of your squirrel, can only be used once",
+        description: "Change the name of your squirrel, can only be used at level 1",
         args: "name - the new name for your squirrel",
-        run: function (msg, data, args, file) { return nameChange(msg, data, file); }
+        run: function (msg, data, args, file) { return nameChange(msg, data, args, file); }
     },
     "races": {
         title: "Races",
@@ -140,8 +146,8 @@ function help(msg, args) {
     else if (processes.hasOwnProperty(argument)) {
         var embed = new Discord.RichEmbed()
             .setTitle(processes[argument].title)
-            .setDescription(processes[argument].description)
-            .setColor(COLOR);
+            .setColor(COLOR)
+            .setDescription(processes[argument].description);
         if (processes[argument].args === "") {
             embed.addField("Arguments:", "This command has no arguments");
         }
@@ -154,12 +160,23 @@ function help(msg, args) {
         msg.reply("That command does not exist");
     }
 }
+function list(msg) {
+    var embed = new Discord.RichEmbed()
+        .setTitle("List of Commands")
+        .setColor(COLOR);
+    var description = "";
+    Object.keys(processes).forEach(function (process) {
+        description += "**" + processes[process].title + ":** " + processes[process].description + ".\n";
+    });
+    embed.setDescription(description);
+    msg.author.send(embed);
+}
 function read(msg, data) {
     var embed = new Discord.RichEmbed()
         .setTitle(msg.author.username)
-        .setDescription("Squirrel Info")
         .setColor(COLOR)
         .setThumbnail(msg.author.avatarURL)
+        .setDescription("Squirrel Info")
         .addField("Name", data.name)
         .addField("Race", raceText(data.race))
         .addField("Class", capitalize(data["class"]))
@@ -212,10 +229,10 @@ function create(msg, args, file) {
         return false;
     }
 }
-function nameChange(msg, data, file) {
+function nameChange(msg, data, args, file) {
     if (data.level == 1) {
-        if (msg.content.split(' ').length >= 2) {
-            var newName = msg.content.split(' ')[1];
+        if (args.length >= 2) {
+            var newName = args[1];
             data.name = capitalize(newName) + " " + data.name.split(' ')[1];
             fs.writeFileSync(file, JSON.stringify(data));
             msg.reply("Name changed to " + data.name);
