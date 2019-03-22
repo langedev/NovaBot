@@ -202,13 +202,12 @@ function read(msg: any, data: player): void {
 
 function create(msg: any, args: Array<string>, file: any): boolean {
     if (args.length === 3) {
-        let newSquirrel: Array<string> = msg.content.split(' ');
         let newPlayer: player = newPlayerTemplate;
         let incorrect: string = "";
 
         incorrect = " race";
         races.some(type => {
-            if (newSquirrel[2].toLowerCase() == type) {
+            if (args[1].toLowerCase() == type) {
                 incorrect = "";
                 return true;
             }
@@ -219,7 +218,7 @@ function create(msg: any, args: Array<string>, file: any): boolean {
         else
             incorrect += ", and class";
         classes.some(type => {
-            if (newSquirrel[3].toLowerCase() == type) {
+            if (args[2].toLowerCase() == type) {
                 if (incorrect == " race, and class")
                     incorrect = " race";
                 else
@@ -229,9 +228,9 @@ function create(msg: any, args: Array<string>, file: any): boolean {
         });
 
         if (incorrect === "") {
-            newPlayer.name = newSquirrel[1] + " " + lastNames[randomInt(0, lastNames.length - 1)];
-            newPlayer.race = newSquirrel[2];
-            newPlayer.class = newSquirrel[3];
+            newPlayer.name = args[0] + " " + lastNames[randomInt(0, lastNames.length - 1)];
+            newPlayer.race = args[1];
+            newPlayer.class = args[2];
             fs.writeFileSync(file, JSON.stringify(newPlayer));
             msg.reply(`Squirrel ${newPlayer.name} has been created`);
             return true;
@@ -247,9 +246,8 @@ function create(msg: any, args: Array<string>, file: any): boolean {
 
 function nameChange(msg: any, data: player, args: string[], file: any): void {
     if (data.level == 1) {
-        if (args.length >= 2) {
-            let newName: string = args[1];
-            data.name = capitalize(newName) + " " + data.name.split(' ')[1];
+        if (args.length >= 1) {
+            data.name = capitalize(args[0]) + " " + data.name.split(' ')[1];
             fs.writeFileSync(file, JSON.stringify(data));
             msg.reply(`Name changed to ${data.name}`);
         } else {

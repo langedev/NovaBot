@@ -188,12 +188,11 @@ function read(msg, data) {
 }
 function create(msg, args, file) {
     if (args.length === 3) {
-        var newSquirrel_1 = msg.content.split(' ');
         var newPlayer = newPlayerTemplate;
         var incorrect_1 = "";
         incorrect_1 = " race";
         races.some(function (type) {
-            if (newSquirrel_1[2].toLowerCase() == type) {
+            if (args[1].toLowerCase() == type) {
                 incorrect_1 = "";
                 return true;
             }
@@ -203,7 +202,7 @@ function create(msg, args, file) {
         else
             incorrect_1 += ", and class";
         classes.some(function (type) {
-            if (newSquirrel_1[3].toLowerCase() == type) {
+            if (args[2].toLowerCase() == type) {
                 if (incorrect_1 == " race, and class")
                     incorrect_1 = " race";
                 else
@@ -212,9 +211,9 @@ function create(msg, args, file) {
             }
         });
         if (incorrect_1 === "") {
-            newPlayer.name = newSquirrel_1[1] + " " + lastNames[randomInt(0, lastNames.length - 1)];
-            newPlayer.race = newSquirrel_1[2];
-            newPlayer["class"] = newSquirrel_1[3];
+            newPlayer.name = args[0] + " " + lastNames[randomInt(0, lastNames.length - 1)];
+            newPlayer.race = args[1];
+            newPlayer["class"] = args[2];
             fs.writeFileSync(file, JSON.stringify(newPlayer));
             msg.reply("Squirrel " + newPlayer.name + " has been created");
             return true;
@@ -231,9 +230,8 @@ function create(msg, args, file) {
 }
 function nameChange(msg, data, args, file) {
     if (data.level == 1) {
-        if (args.length >= 2) {
-            var newName = args[1];
-            data.name = capitalize(newName) + " " + data.name.split(' ')[1];
+        if (args.length >= 1) {
+            data.name = capitalize(args[0]) + " " + data.name.split(' ')[1];
             fs.writeFileSync(file, JSON.stringify(data));
             msg.reply("Name changed to " + data.name);
         }
