@@ -21,43 +21,42 @@ var processes = {
     "help": {
         title: "Help",
         description: "Show a description of a command",
+        args: "command - the command you'd like to know more about\n",
         run: function (msg, data, args, file) { return help(msg, args); }
     },
     "read": {
         title: "Read",
         description: "Read a description of your squirrel",
+        args: "",
         run: function (msg, data, args, file) { return read(msg, data); }
     },
     "create": {
         title: "Create",
         description: "Create a squirrel, can only be used once.",
+        args: "name - the name of the created squirrel\nrace - The race of the created squirrel, type !races for race options\nclass - The class of the created squirrel, type !classes for class options",
         run: function (msg, data, args, file) { return msg.reply("You already have a squirrel silly."); }
     },
     "namechange": {
         title: "Namechange",
         description: "Change the name of your squirrel, can only be used once",
+        args: "name - the new name for your squirrel",
         run: function (msg, data, args, file) { return nameChange(msg, data, file); }
     },
     "races": {
         title: "Races",
         description: "List all the races",
+        args: "",
         run: function (msg, data, args, file) { return printRaces(msg); }
     },
     "classes": {
         title: "Classes",
         description: "List all the classes",
+        args: "",
         run: function (msg, data, args, file) { return printClasses(msg); }
     }
 };
 var COLOR = "#E81B47";
-var authorId;
-var playerFile;
-var rawPlayerData;
-var command;
-var messageContent;
-var args = [""];
-var encounterInProgress;
-var playerData;
+// let encounterInProgress: boolean;
 client.on('ready', function () {
     console.log("Logged in as " + client.user.tag + "!");
     var encounterChannel = client.channels.find(function (ch) { return ch.name === 'the-wild'; });
@@ -72,43 +71,50 @@ client.on('ready', function () {
 client.on('message', function (msg) {
     if (msg.channel.type === "dm")
         return;
-    messageContent = msg.content.split(" ");
-    command = messageContent[0];
-    if (messageContent.length > 1)
-        args = messageContent.slice(1);
+    var messageContent = msg.content.split(" ");
+    var command = messageContent[0];
     if (!command.startsWith(info.prefix))
         return;
-    authorId = msg.author.id;
-    playerFile = "./data/playerdata/" + authorId + ".json";
+    var args = [""];
+    if (messageContent.length > 1)
+        args = messageContent.slice(1);
+    var authorId = msg.author.id;
+    var playerFile = "./data/playerdata/" + authorId + ".json";
     if (fs.existsSync(playerFile)) {
-        rawPlayerData = fs.readFileSync(playerFile);
-        playerData = JSON.parse(rawPlayerData);
+        var rawPlayerData = fs.readFileSync(playerFile);
+        var playerData_1 = JSON.parse(rawPlayerData);
         Object.keys(processes).forEach(function (process) {
-            if ("!" + processes[process].title.toLowerCase() === command) {
-                processes[process].run(msg, playerData, args, playerFile);
+            if ("" + info.prefix + processes[process].title.toLowerCase() === command) {
+                processes[process].run(msg, playerData_1, args, playerFile);
             }
         });
     }
-    else if (command === "!create") {
+    else if (command === info.prefix + "create") {
         console.log("Attempting to make a squirrel for " + authorId);
-        if (create(msg, args))
+        if (create(msg, args, playerFile))
             console.log("Squirrel made succesfully for " + authorId);
         else
             console.log("Failed to create quirrel for " + authorId);
     }
 });
 client.login(info.key);
-function encounter(encounterChannel) {
-    if (!encounterInProgress) { // randomInt(1,60) === 60 && 
+/*
+function encounter(encounterChannel: any): void {
+    if (!encounterInProgress) { // randomInt(1,60) === 60 &&
         console.log("Starting Encounter");
         encounterInProgress = true;
         encounterChannel.send("An encounter is beginning!");
-        encounterChannel.send("`\u25A0\u25A0\u25A0   \u25A0\u25A0\u25A0    \u25A0\u25A0\u25A0  \u25A0\u25A0\u25A0`\n`\u25A0\u25A0\u25A0   \u25A0\u25A0\u25A0    \u25A0\u25A0\u25A0  \u25A0\u25A0\u25A0`\n`\u25A0\u25A0\u25A0   \u25A0\u25A0\u25A0    \u25A0\u25A0\u25A0  \u25A0\u25A0\u25A0`").then(function (msg) {
+
+        encounterChannel.send(`\`■■■   ■■■    ■■■  ■■■\`\n\`■■■   ■■■    ■■■  ■■■\`\n\`■■■   ■■■    ■■■  ■■■\``).then(msg => {
+
+
+
             console.log("Encounter finished");
             encounterInProgress = false;
         });
     }
 }
+*/
 function randomInt(low, high) {
     return Math.floor(Math.random() * (high - low + 1) + low);
 }
@@ -127,6 +133,26 @@ function capitalize(toCaps) {
 }
 // Commands:
 function help(msg, args) {
+    var argument = args[0].toLowerCase();
+    if (argument === "") {
+        msg.reply("Please provide a command, like \"!help help\", or \"!help races\"");
+    }
+    else if (processes.hasOwnProperty(argument)) {
+        var embed = new Discord.RichEmbed()
+            .setTitle(processes[argument].title)
+            .setDescription(processes[argument].description)
+            .setColor(COLOR);
+        if (processes[argument].args === "") {
+            embed.addField("Arguments:", "This command has no arguments");
+        }
+        else {
+            embed.addField("Arguments:", processes[argument].args);
+        }
+        msg.channel.send(embed);
+    }
+    else {
+        msg.reply("That command does not exist");
+    }
 }
 function read(msg, data) {
     var embed = new Discord.RichEmbed()
@@ -143,7 +169,7 @@ function read(msg, data) {
         embed.addField("DM Points", data.dm_points);
     msg.channel.send(embed);
 }
-function create(msg, args) {
+function create(msg, args, file) {
     if (args.length === 3) {
         var newSquirrel_1 = msg.content.split(' ');
         var newPlayer = newPlayerTemplate;
@@ -172,7 +198,7 @@ function create(msg, args) {
             newPlayer.name = newSquirrel_1[1] + " " + lastNames[randomInt(0, lastNames.length - 1)];
             newPlayer.race = newSquirrel_1[2];
             newPlayer["class"] = newSquirrel_1[3];
-            fs.writeFileSync(playerFile, JSON.stringify(newPlayer));
+            fs.writeFileSync(file, JSON.stringify(newPlayer));
             msg.reply("Squirrel " + newPlayer.name + " has been created");
             return true;
         }
