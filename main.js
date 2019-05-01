@@ -1,13 +1,16 @@
 "use strict";
 // Created by Dalton Lange
 exports.__esModule = true;
+//===Requirements===
 var fs = require('fs');
 var Discord = require('discord.js');
 var client = new Discord.Client();
 var info = JSON.parse(fs.readFileSync("./data/info.json"));
+//===Data stored for use, such as class, race, and last names===
 var races = ["tree", "ground", "chipmunk"];
 var classes = ["rogue", "berserker", "knight", "ranger", "huntsman", "priest"];
 var lastNames = ["Nutcrack", "Seedsower", "McScuiri", "Rodentia", "Arbora", "Patagi"];
+var COLOR = "#E81B47";
 var newPlayerTemplate = {
     "name": "",
     "race": "",
@@ -17,11 +20,12 @@ var newPlayerTemplate = {
     "dm": false,
     "dm_points": 0
 };
+//===Commands===
 var processes = {
     "help": {
         title: "Help",
         description: "Show a description of a command",
-        args: "command - the command you'd like to know more about\n",
+        args: "**command** - the command you'd like to know more about",
         run: function (msg, data, args, file) { return help(msg, args); }
     },
     "list": {
@@ -39,13 +43,13 @@ var processes = {
     "create": {
         title: "Create",
         description: "Create a squirrel, can only be used once",
-        args: "name - the name of the created squirrel\nrace - The race of the created squirrel, type !races for race options\nclass - The class of the created squirrel, type !classes for class options",
+        args: "**name** - the name of the created squirrel\n**race** - The race of the created squirrel, type !races for race options\n**class** - The class of the created squirrel, type !classes for class options",
         run: function (msg, data, args, file) { return msg.reply("You already have a squirrel silly."); }
     },
     "namechange": {
         title: "Namechange",
         description: "Change the name of your squirrel, can only be used at level 1",
-        args: "name - the new name for your squirrel",
+        args: "**name** - the new name for your squirrel",
         run: function (msg, data, args, file) { return nameChange(msg, data, args, file); }
     },
     "races": {
@@ -61,12 +65,19 @@ var processes = {
         run: function (msg, data, args, file) { return printClasses(msg); }
     }
 };
-var COLOR = "#E81B47";
+//===Global editable variables===
+var encounterChannel;
+var preparingChannel;
+var generalChannel;
+var barChannel;
 // let encounterInProgress: boolean;
+//===Initalization===
 client.on('ready', function () {
     console.log("Logged in as " + client.user.tag + "!");
-    var encounterChannel = client.channels.find(function (ch) { return ch.name === 'the-wild'; });
-    var preparingChannel = client.channels.find(function (ch) { return ch.name === 'preparing-for-expedition'; });
+    encounterChannel = client.channels.find(function (ch) { return ch.name === 'the-wild'; });
+    preparingChannel = client.channels.find(function (ch) { return ch.name === 'preparing-for-expedition'; });
+    generalChannel = client.channels.find(function (ch) { return ch.name === 'general-table'; });
+    barChannel = client.channels.find(function (ch) { return ch.name === 'the-bar'; });
     // const preparingCollector = new Discord.MessageCollector(preparingChannel);
     // preparingCollector.on('collect', msg => {
     //     console.log(msg.content);
@@ -74,19 +85,20 @@ client.on('ready', function () {
     // setInterval( function() { encounter(encounterChannel); }, 300000 );
     // encounter(encounterChannel);
 });
+//===When receiving messages
 client.on('message', function (msg) {
-    if (msg.channel.type === "dm")
+    //Reasons to exit
+    // if (msg.channel.type === "dm") return;
+    if (!msg.content.split(" ")[0].startsWith(info.prefix))
         return;
     var messageContent = msg.content.split(" ");
-    var command = messageContent[0];
-    if (!command.startsWith(info.prefix))
-        return;
-    var args = [""];
+    var command = messageContent[0]; // This is the command they are using
+    var args = [""]; // arguments of the message
     if (messageContent.length > 1)
         args = messageContent.slice(1);
-    var authorId = msg.author.id;
+    var authorId = msg.author.id; // Message Author
     var playerFile = "./data/playerdata/" + authorId + ".json";
-    if (fs.existsSync(playerFile)) {
+    if (fs.existsSync(playerFile)) { // If they're file exists, they can use commands, otherwise direct them to the create command
         var rawPlayerData = fs.readFileSync(playerFile);
         var playerData_1 = JSON.parse(rawPlayerData);
         Object.keys(processes).forEach(function (process) {
@@ -95,15 +107,22 @@ client.on('message', function (msg) {
             }
         });
     }
-    else if (command === info.prefix + "create") {
-        console.log("Attempting to make a squirrel for " + authorId);
-        if (create(msg, args, playerFile))
-            console.log("Squirrel made succesfully for " + authorId);
-        else
-            console.log("Failed to create quirrel for " + authorId);
+    else {
+        if (command === info.prefix + "create") {
+            console.log("Attempting to make a squirrel for " + authorId);
+            if (create(msg, args, playerFile))
+                console.log("Squirrel made succesfully for " + authorId);
+            else
+                console.log("Failed to create a squirrel for " + authorId);
+        }
+        else {
+            msg.reply("Please make a squirrel before interacting with the bot. To do so please use the create command. For more information on creation type \"!help create\"");
+        }
     }
 });
+// Log the bot in
 client.login(info.key);
+//===FUNCTIONS===
 /*
 function encounter(encounterChannel: any): void {
     if (!encounterInProgress) { // randomInt(1,60) === 60 &&
@@ -137,11 +156,11 @@ function raceText(race) {
 function capitalize(toCaps) {
     return toCaps.charAt(0).toUpperCase() + toCaps.slice(1).toLowerCase();
 }
-// Commands:
+//===COMMAND FUNCTIONS==
 function help(msg, args) {
     var argument = args[0].toLowerCase();
     if (argument === "") {
-        msg.reply("Please provide a command, like \"!help help\", or \"!help races\"");
+        msg.reply("Please provide a command, like \"!help help\", or \"!help races\"\nAlternatively type \"!list\" for a list of commands");
     }
     else if (processes.hasOwnProperty(argument)) {
         var embed = new Discord.RichEmbed()

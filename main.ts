@@ -1,15 +1,17 @@
 // Created by Dalton Lange
 
+//===Requirements===
 const fs = require('fs');
 const Discord = require('discord.js');
 const client = new Discord.Client();
 const info = JSON.parse(fs.readFileSync(`./data/info.json`));
 import { player } from "./data/enums/playerdata";
-import { listenerCount } from "cluster";
 
+//===Data stored for use, such as class, race, and last names===
 const races: Array<string> = ["tree", "ground", "chipmunk"];
 const classes: Array<string> = ["rogue", "berserker", "knight", "ranger", "huntsman", "priest"];
 const lastNames: Array<string> = ["Nutcrack", "Seedsower", "McScuiri", "Rodentia", "Arbora", "Patagi"];
+const COLOR: string = "#E81B47";
 const newPlayerTemplate: player = {
     "name": "",
     "race": "",
@@ -19,11 +21,13 @@ const newPlayerTemplate: player = {
     "dm": false,
     "dm_points": 0
 }
+
+//===Commands===
 const processes: any = {
     "help": {
         title: "Help",
         description: "Show a description of a command",
-        args: "command - the command you'd like to know more about\n",
+        args: "**command** - the command you'd like to know more about",
         run: (msg: any, data: player, args: string[], file: any) => help(msg, args)
     },
     "list": {
@@ -41,13 +45,13 @@ const processes: any = {
     "create": {
         title: "Create",
         description: "Create a squirrel, can only be used once",
-        args: "name - the name of the created squirrel\nrace - The race of the created squirrel, type !races for race options\nclass - The class of the created squirrel, type !classes for class options",
+        args: "**name** - the name of the created squirrel\n**race** - The race of the created squirrel, type !races for race options\n**class** - The class of the created squirrel, type !classes for class options",
         run: (msg: any, data: player, args: string[], file: any) => msg.reply(`You already have a squirrel silly.`)
     },
     "namechange": {
         title: "Namechange",
         description: "Change the name of your squirrel, can only be used at level 1",
-        args: "name - the new name for your squirrel",
+        args: "**name** - the new name for your squirrel",
         run: (msg: any, data: player, args: string[], file: any) => nameChange(msg, data, args, file)
     },
     "races": {
@@ -63,14 +67,21 @@ const processes: any = {
         run: (msg: any, data: player, args: string[], file: any) => printClasses(msg)
     }
 }
-const COLOR: string = "#E81B47";
 
+//===Global editable variables===
+let encounterChannel;
+let preparingChannel;
+let generalChannel;
+let barChannel;
 // let encounterInProgress: boolean;
 
+//===Initalization===
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
-    const encounterChannel = client.channels.find(ch => ch.name === 'the-wild');
-    const preparingChannel = client.channels.find(ch => ch.name === 'preparing-for-expedition');
+    encounterChannel = client.channels.find(ch => ch.name === 'the-wild');
+    preparingChannel = client.channels.find(ch => ch.name === 'preparing-for-expedition');
+    generalChannel = client.channels.find(ch => ch.name === 'general-table');
+    barChannel = client.channels.find(ch => ch.name === 'the-bar');
     // const preparingCollector = new Discord.MessageCollector(preparingChannel);
     // preparingCollector.on('collect', msg => {
     //     console.log(msg.content);
@@ -79,42 +90,48 @@ client.on('ready', () => {
     // encounter(encounterChannel);
 });
 
+//===When receiving messages
 client.on('message', msg => {
-    
-    if (msg.channel.type === "dm") return;
+    //Reasons to exit
+    // if (msg.channel.type === "dm") return;
+    if (!msg.content.split(" ")[0].startsWith(info.prefix)) return;
 
     let messageContent: Array<string> = msg.content.split(" ");
-    let command: string = messageContent[0];
+    let command: string = messageContent[0]; // This is the command they are using
 
-    if (!command.startsWith(info.prefix)) return;
-
-    let args: Array<string> = [""];
+    let args: Array<string> = [""]; // arguments of the message
     if (messageContent.length > 1) args = messageContent.slice(1);
 
-    let authorId: number = msg.author.id;
+    let authorId: number = msg.author.id; // Message Author
     let playerFile: string = `./data/playerdata/${authorId}.json`;
 
-    if (fs.existsSync(playerFile)) {
-
+    if (fs.existsSync(playerFile)) { // If they're file exists, they can use commands, otherwise direct them to the create command
         let rawPlayerData: string = fs.readFileSync(playerFile);
         let playerData: player = JSON.parse(rawPlayerData);
 
-        Object.keys(processes).forEach(process => {
+        Object.keys(processes).forEach(process => { // See if the command they typed is a command
             if(`${info.prefix}${processes[process].title.toLowerCase()}` === command){
                 processes[process].run(msg, playerData, args, playerFile);
             }
         });
 
-    } else if (command === `${info.prefix}create`) {
-        console.log(`Attempting to make a squirrel for ${authorId}`);
-        if (create(msg, args, playerFile))
-            console.log(`Squirrel made succesfully for ${authorId}`);
-        else
-            console.log(`Failed to create quirrel for ${authorId}`);
+    } else {
+        if(command === `${info.prefix}create`){
+            console.log(`Attempting to make a squirrel for ${authorId}`);
+            if (create(msg, args, playerFile))
+                console.log(`Squirrel made succesfully for ${authorId}`);
+            else
+                console.log(`Failed to create a squirrel for ${authorId}`);
+        } else {
+            msg.reply(`Please make a squirrel before interacting with the bot. To do so please use the create command. For more information on creation type "!help create"`);
+        }
     }
 });
 
+// Log the bot in
 client.login(info.key);
+
+//===FUNCTIONS===
 /*
 function encounter(encounterChannel: any): void {
     if (!encounterInProgress) { // randomInt(1,60) === 60 && 
@@ -149,12 +166,12 @@ function capitalize(toCaps: string): string {
     return toCaps.charAt(0).toUpperCase() + toCaps.slice(1).toLowerCase();
 }
 
-// Commands:
+//===COMMAND FUNCTIONS==
 
 function help(msg: any, args: string[]): void {
     let argument: string = args[0].toLowerCase();
     if(argument === "") {
-        msg.reply(`Please provide a command, like "!help help", or "!help races"`);
+        msg.reply(`Please provide a command, like "!help help", or "!help races"\nAlternatively type "!list" for a list of commands`);
     } else if(processes.hasOwnProperty(argument)){
         let embed = new Discord.RichEmbed()
             .setTitle(processes[argument].title)
