@@ -3,8 +3,10 @@
 This is a temporary read me, and if you have trouble running the bot feel free to contact me.
 
 To used this bot:
-You must have node installed, and include the package discord.js.
-Then create a info.json file, and in it include this:
+First run `npm install` or `yarn install` whichever you prefer.
+you will need to compile the typescript, to do so type `tsc main.ts`
+
+create the file data/info.json, and inside of it include:
 {
     "key": "your discord key",
     "prefix": "!"

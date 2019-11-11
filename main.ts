@@ -5,21 +5,29 @@ const fs = require('fs');
 const Discord = require('discord.js');
 const client = new Discord.Client();
 const info = JSON.parse(fs.readFileSync(`./data/info.json`));
-import { player } from "./data/enums/playerdata";
+import { player } from "./enums";
 
 //===Data stored for use, such as class, race, and last names===
 const races: Array<string> = ["tree", "ground", "chipmunk"];
-const classes: Array<string> = ["rogue", "berserker", "knight", "ranger", "huntsman", "priest"];
-const lastNames: Array<string> = ["Nutcrack", "Seedsower", "McScuiri", "Rodentia", "Arbora", "Patagi"];
+const classes: Array<string> = ["rogue", "berserker", "knight", "ranger", "priest"];
+const lastNames: Array<string> = ["Nutcrack", "Nutmeg", "Seedsower", "McScuiri", "Rodentia", "Arbora", "Patagi"];
 const COLOR: string = "#E81B47";
 const newPlayerTemplate: player = {
-    "name": "",
-    "race": "",
+    "name":  "",
+    "race":  "",
     "class": "",
-    "level": 1,
-    "nuts": 0,
-    "dm": false,
-    "dm_points": 0
+    "weapon": {
+        "weaponName": "",
+        "attackStat":  0,
+        "defenseStat": 0,
+        "secondStat":  0
+    },
+    "level":      1,
+    "nuts":       0,
+    "staminaMax": 0,
+    "stamina":    0,
+    "dm":     false,
+    "dm_points":  0
 }
 
 //===Commands===
@@ -42,12 +50,6 @@ const processes: any = {
         args: "",
         run: (msg: any, data: player, args: string[], file: any) => read(msg, data)
     },
-    "create": {
-        title: "Create",
-        description: "Create a squirrel, can only be used once",
-        args: "**name** - the name of the created squirrel\n**race** - The race of the created squirrel, type !races for race options\n**class** - The class of the created squirrel, type !classes for class options",
-        run: (msg: any, data: player, args: string[], file: any) => msg.reply(`You already have a squirrel silly.`)
-    },
     "namechange": {
         title: "Namechange",
         description: "Change the name of your squirrel, can only be used at level 1",
@@ -65,7 +67,13 @@ const processes: any = {
         description: "List all the classes",
         args: "",
         run: (msg: any, data: player, args: string[], file: any) => printClasses(msg)
-    }
+    },
+    "create": {
+        title: "Create",
+        description: "Create a squirrel, can only be used once",
+        args: "**name** - the name of the created squirrel\n**race** - The race of the created squirrel, type !races for race options\n**class** - The class of the created squirrel, type !classes for class options",
+        run: (msg: any, data: player, args: string[], file: any) => msg.reply(`You already have a squirrel silly.`)
+    },
 }
 
 //===Global editable variables===
@@ -93,10 +101,9 @@ client.on('ready', () => {
 //===When receiving messages
 client.on('message', msg => {
     //Reasons to exit
-    // if (msg.channel.type === "dm") return;
-    if (!msg.content.split(" ")[0].startsWith(info.prefix)) return;
+    if (!msg.content.split(" ")[0].startsWith(info.prefix)) return; // if the message doesn't start with the prefix
 
-    let messageContent: Array<string> = msg.content.split(" ");
+    let messageContent: Array<string> = msg.content.split(" "); // split message into an array on spaces
     let command: string = messageContent[0]; // This is the command they are using
 
     let args: Array<string> = [""]; // arguments of the message
@@ -106,8 +113,7 @@ client.on('message', msg => {
     let playerFile: string = `./data/playerdata/${authorId}.json`;
 
     if (fs.existsSync(playerFile)) { // If they're file exists, they can use commands, otherwise direct them to the create command
-        let rawPlayerData: string = fs.readFileSync(playerFile);
-        let playerData: player = JSON.parse(rawPlayerData);
+        let playerData: player = JSON.parse(fs.readFileSync(playerFile));
 
         Object.keys(processes).forEach(process => { // See if the command they typed is a command
             if(`${info.prefix}${processes[process].title.toLowerCase()}` === command){
@@ -116,7 +122,7 @@ client.on('message', msg => {
         });
 
     } else {
-        if(command === `${info.prefix}create`){
+        if(command === `${info.prefix}create`){ // if they are using the create command
             console.log(`Attempting to make a squirrel for ${authorId}`);
             if (create(msg, args, playerFile))
                 console.log(`Squirrel made succesfully for ${authorId}`);
