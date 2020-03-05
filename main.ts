@@ -1,84 +1,48 @@
 // Created by Dalton Lange
 
 //===Requirements===
-export const Discord = require('discord.js');
-const client = new Discord.Client();
 export const fs = require('fs');
+export const Discord = require('discord.js');
+
 const info = JSON.parse(fs.readFileSync(`./data/info.json`));
+const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
-import { player } from "./scripts/enums";
-import { processes, channels } from "./scripts/commands";
-import { encounterInProgress } from "./scripts/functions";
+const client = new Discord.Client();
+client.commands = new Discord.Collection();
 
-
-//===Global editable variables===
-
+for (const file of commandFiles) {
+    const command = require(`./commands/${file}`);
+    client.commands.set(command.name, command);
+}
 
 //===Initalization===
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
-    channels.general = client.channels.find(ch => ch.id === info.channels.general);
-    channels.encounter = client.channels.find(ch => ch.id === info.channels.encounter);
-    channels.preparing = client.channels.find(ch => ch.id === info.channels.preparing);
-    // const preparingCollector = new Discord.MessageCollector(preparingChannel);
-    // preparingCollector.on('collect', msg => {
-    //     console.log(msg.content);
-    // });
-    // setInterval( function() { encounter(encounterChannel); }, 300000 );
-    // encounter(encounterChannel);
 });
 
 //===When receiving messages
 client.on('message', msg => {
     //Reasons to exit
-    if (!msg.content.split(" ")[0].startsWith(info.prefix)) return; // if the message doesn't start with the prefix
-    switch(msg.channel) {
-        case channels.encounter:
-            if(encounterInProgress) return;
-            encounterChannelMessage(msg);
-            break;
-        default:
-            defaultChannelMessage(msg);
-    }
-    
+    if (!msg.content.split(" ")[0].startsWith(info.prefix) || msg.author.bot) return; // if the message doesn't start with the prefix
+
+    executeCommand(msg);
 });
 
 // Log the bot in
 client.login(info.key);
 
-
-// Channel Cases
-function defaultChannelMessage(msg: any): void {
-    let messageContent: Array<string> = msg.content.split(" "); // split message into an array on spaces
-    let command: string = messageContent[0]; // This is the command they are using
-
+function executeCommand(msg: any) {
+    const messageContent: Array<string> = msg.content.slice(1).split(" "); // split message into an array on spaces
+    const command: string = messageContent[0].toLowerCase(); // This is the command they are using
     let args: Array<string> = [""]; // arguments of the message
     if (messageContent.length > 1) args = messageContent.slice(1);
-    let authorId: number = msg.author.id; // Message Author
-    let playerFile: string = `./data/playerdata/${authorId}.json`;
 
-    if (fs.existsSync(playerFile)) { // If they're file exists, they can use commands, otherwise direct them to the create command
-        let playerData: player = JSON.parse(fs.readFileSync(playerFile));
+    if (!client.commands.has(command)) return;
 
-        Object.keys(processes).forEach(process => { // See if the command they typed is a command
-            if(`${info.prefix}${processes[process].title.toLowerCase()}` === command){
-                processes[process].run(msg, playerData, args, playerFile);
-            }
-        });
-
-    } else {
-        if(command === `${info.prefix}create`){ // if they are using the create command
-            console.log(`Attempting to make a squirrel for ${authorId}`);
-            if (processes["create"]["create"].run(msg, null, args, playerFile))
-                console.log(`Squirrel made succesfully for ${authorId}`);
-            else
-                console.log(`Failed to create a squirrel for ${authorId}`);
-        } else {
-            msg.reply(`Please make a squirrel before interacting with the bot. To do so please use the create command. For more information on creation type "!help create"`);
-        }
+    try {
+        client.commands.get(command).execute(msg, args);
+    } catch (e) {
+        console.error(e);
+        msg.reply(`Failed to execute the given command for some reason. Sad.`);
     }
-}
-
-function encounterChannelMessage(msg: any): void {
-    
 }
