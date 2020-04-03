@@ -1,10 +1,14 @@
-import { squirrel } from "../scripts/enums";
 import { fs } from "../main";
+import { squirrel } from "../scripts/enums";
 
 const races: Array<string> = ["tree", "ground", "chipmunk"];
 const classes: Array<string> = ["rogue", "berserker", "knight", "ranger", "priest"];
 const lastNames: Array<string> = ["Nutcrack", "Nutmeg", "Seedsower", "McScuiri", "Rodentia", "Arbora", "Patagi"];
-// const COLOR: string = "#E81B47";
+export const COLOR: string = "#E81B47";
+
+export function getPlayerData(playerId: string): squirrel {
+    return JSON.parse(fs.readFileSync(`./data/playerdata/${playerId}.json`))
+}
 
 export function newSquirrel(name: string, race: string, classtype: string): squirrel {
     let raceNum: number = -1;
@@ -44,14 +48,24 @@ export function randomInt(low: number, high: number): number {
     return Math.floor(Math.random() * (high - low + 1) + low)
 }
 
-// export function raceText(race: number): string {
-//     if (race === 2) return capitalize(races[race]);
-//     else if (race === 0 || race === 1) return `${capitalize(races[race])} Squirrel`;
-//     else {
-//         console.log(`Error ${race} is not a valid race`);
-//         return "";
-//     }
-// }
+export function raceText(raceIndex: number): string {
+    if (raceIndex >= races.length) {
+        console.log(`Error ${raceIndex} is outside of bounds`);
+        return "";
+    }
+
+    if (raceIndex === 2) return capitalize(races[raceIndex]);
+    else if (raceIndex === 0 || raceIndex === 1) return `${capitalize(races[raceIndex])} Squirrel`;
+}
+
+export function classText(classIndex: number): string {
+    if (classIndex >= classes.length) {
+        console.log(`Error ${classIndex} is outside of bounds`);
+        return "";
+    }
+
+    return capitalize(classes[classIndex]);
+}
 
 export function capitalize(toCaps: string): string {
     return toCaps.charAt(0).toUpperCase() + toCaps.slice(1).toLowerCase();
