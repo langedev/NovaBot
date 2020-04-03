@@ -1,0 +1,70 @@
+import { Discord, fs } from "../main";
+import { player } from "../scripts/enums";
+import { raceText, capitalize, randomInt } from "../scripts/functions";
+
+//===Data stored for use, such as class, race, and last names===
+
+let processes: any = {
+    "test": {
+        title: "Test",
+        description: "For testing",
+        args: "",
+        run: (msg: any, data: player, args: string[], file: any) => encounter()
+    },
+    "list": {
+        title: "List",
+        description: "List all commands",
+        args: "",
+        run: (msg: any, data: player, args: string[], file: any) => list(msg)
+    },
+    "races": {
+        title: "Races",
+        description: "List all the races",
+        args: "",
+        run: (msg: any, data: player, args: string[], file: any) => printRaces(msg)
+    },
+    "classes": {
+        title: "Classes",
+        description: "List all the classes",
+        args: "",
+        run: (msg: any, data: player, args: string[], file: any) => printClasses(msg)
+    },
+}
+
+//===COMMAND FUNCTIONS==
+
+function list(msg: any): void {
+    let embed = new Discord.RichEmbed()
+        .setTitle("List of Commands")
+        .setColor(COLOR);
+    let description: string = "";
+    Object.keys(processes).forEach(process => {
+        description += `**${processes[process].title}:** ${processes[process].description}.\n`;
+    });
+    embed.setDescription(description);
+    msg.author.send(embed);
+}
+
+function printRaces(msg: any): void {
+    let print = "The races are: ";
+    for (let i = 0; i < races.length; i++) {
+        if (i === races.length - 1) {
+            print += `& ${raceText(races[i])}s`;
+        } else {
+            print += `${raceText(races[i])}s, `;
+        }
+    }
+    msg.reply(print);
+}
+
+function printClasses(msg: any): void {
+    let print = "The classes are: ";
+    for (let i = 0; i < classes.length; i++) {
+        if (i === classes.length - 1) {
+            print += `& ${capitalize(classes[i])}s`;
+        } else {
+            print += `${capitalize(classes[i])}s, `;
+        }
+    }
+    msg.reply(print);
+}

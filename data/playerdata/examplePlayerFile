@@ -1,0 +1,17 @@
+{
+    "name": "Snickers Patagi",
+    "race": 0,
+    "class": 2,
+    "weapon": {
+        "weaponName": "",
+        "attackStat": 0,
+        "defenseStat": 0,
+        "secondStat": 0
+    },
+    "level": 1,
+    "nuts": 0,
+    "staminaMax": 0,
+    "stamina": 0,
+    "dm": false,
+    "dm_points": 0
+}
