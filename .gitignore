@@ -74,5 +74,6 @@ typings/
 
 # FuseBox cache
 .fusebox/
-*.json
-*.js
+
+# Outputed JS files from compiling
+output/
